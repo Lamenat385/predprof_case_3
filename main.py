@@ -19,15 +19,15 @@ from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
 
 # Регистрация шрифтов (укажите правильные пути к файлам)
-pdfmetrics.registerFont(TTFont('DejaVuSans', 'DejaVuSans.ttf'))
-pdfmetrics.registerFont(TTFont('DejaVuSans-Bold', 'DejaVuSans-Bold.ttf'))
+pdfmetrics.registerFont(TTFont('DejaVuSans', 'DejaVuSans/DejaVuSans.ttf'))
+pdfmetrics.registerFont(TTFont('DejaVuSans-Bold', 'DejaVuSans/DejaVuSans-Bold.ttf'))
 pdfmetrics.registerFontFamily('DejaVuSans', normal='DejaVuSans', bold='DejaVuSans-Bold')
 
 
 class DatabaseManager:
     """Управление базой данных SQLite с функционалом загрузки и обновления"""
 
-    def __init__(self, db_name='predprof_vit.db'):
+    def __init__(self, db_name='data_base.db'):
         self.db_name = db_name
         self.op_names = ['ПМ', 'ИВТ', 'ИТСС', 'ИБ']
         self.dates = ['01_08', '02_08', '03_08', '04_08']
@@ -59,7 +59,6 @@ class DatabaseManager:
 
         conn.commit()
         conn.close()
-        print(f"✓ База данных '{self.db_name}' готова")
 
     def get_all_applicants(self, date):
         """
@@ -132,7 +131,6 @@ class DatabaseManager:
             results = []
 
         conn.close()
-        print(f"Таблица {table_name}: найдено {len(results)} записей")
         return results
 
     def import_from_csv(self, csv_path: str, date: str) -> Tuple[bool, str, Dict]:
@@ -684,10 +682,8 @@ class ReportGenerator:
         # Генерация PDF
         try:
             doc.build(story)
-            print(f"✓ Отчет успешно сохранен: {filename}")
             return filename
         except Exception as e:
-            print(f"✗ Ошибка при создании отчета: {e}")
             return None
 
     def _add_passing_score_chart(self, story):
@@ -738,7 +734,7 @@ class AdmissionGUI:
         self.root.geometry("1200x850")
         self.root.minsize(1000, 750)
 
-        self.db = DatabaseManager('predprof_vit.db')
+        self.db = DatabaseManager('data_base.db')
         self.calculator = AdmissionCalculator(self.db)
         self.report_gen = ReportGenerator(self.db, self.calculator)
 
@@ -1054,49 +1050,6 @@ class AdmissionGUI:
 
 def main():
     """Точка входа в программу"""
-    print("=" * 70)
-    print("СИСТЕМА АНАЛИЗА ПОСТУПЛЕНИЯ")
-    print("Московская предпрофессиональная олимпиада школьников")
-    print("=" * 70)
-    print("\nПроверка зависимостей...")
-
-    # Проверка зависимостей
-    missing = []
-    try:
-        import pandas
-    except ImportError:
-        missing.append("pandas")
-
-    try:
-        import reportlab
-    except ImportError:
-        missing.append("reportlab")
-
-    try:
-        import matplotlib
-    except ImportError:
-        missing.append("matplotlib")
-
-    if missing:
-        print(f"✗ Отсутствуют необходимые библиотеки: {', '.join(missing)}")
-        print("\nУстановите зависимости командой:")
-        print("pip install pandas reportlab matplotlib")
-        return
-
-    print("✓ Все зависимости установлены")
-    print("\nСтруктура базы данных 'predprof_vit.db':")
-    print("  Таблицы: ПМ_01_08, ПМ_02_08, ПМ_03_08, ПМ_04_08, ...")
-    print("  Столбцы в каждой таблице:")
-    print("    • id_applic INTEGER PRIMARY KEY")
-    print("    • consent BOOLEAN NOT NULL")
-    print("    • priorit INTEGER NOT NULL")
-    print("    • physics_it_socre INTEGER NOT NULL  (обратите внимание на опечатку 'socre')")
-    print("    • russian_score INTEGER NOT NULL")
-    print("    • math_score INTEGER NOT NULL")
-    print("    • achivments_score INTEGER NOT NULL  (обратите внимание на опечатку 'achivments')")
-    print("    • total_score INTEGER NOT NULL")
-    print("\nЗапуск графического интерфейса...")
-    print("=" * 70)
 
     root = tk.Tk()
     app = AdmissionGUI(root)
