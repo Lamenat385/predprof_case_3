@@ -15,6 +15,13 @@ from tkinter import ttk, messagebox, filedialog
 import threading
 import pandas as pd
 from typing import Dict, List, Tuple
+from reportlab.pdfbase import pdfmetrics
+from reportlab.pdfbase.ttfonts import TTFont
+
+# Регистрация шрифтов (укажите правильные пути к файлам)
+pdfmetrics.registerFont(TTFont('DejaVuSans', 'DejaVuSans.ttf'))
+pdfmetrics.registerFont(TTFont('DejaVuSans-Bold', 'DejaVuSans-Bold.ttf'))
+pdfmetrics.registerFontFamily('DejaVuSans', normal='DejaVuSans', bold='DejaVuSans-Bold')
 
 
 class DatabaseManager:
@@ -125,6 +132,7 @@ class DatabaseManager:
             results = []
 
         conn.close()
+        print(f"Таблица {table_name}: найдено {len(results)} записей")
         return results
 
     def import_from_csv(self, csv_path: str, date: str) -> Tuple[bool, str, Dict]:
@@ -362,42 +370,43 @@ class DatabaseManager:
 
 
 class TestDataGenerator:
-    """Генератор тестовых данных для демонстрации (соответствует требованиям ТЗ)"""
+    """Генератор тестовых данных, точно соответствующий требованиям ТЗ п. 2.8–2.9"""
 
     def __init__(self, db_manager: DatabaseManager):
         self.db = db_manager
-        self.total_counts = {
+        # Требуемое количество ЗАЯВЛЕНИЙ на каждую программу (п. 2.8 ТЗ)
+        self.total_applications = {
             '01_08': {'ПМ': 60, 'ИВТ': 100, 'ИТСС': 50, 'ИБ': 70},
             '02_08': {'ПМ': 380, 'ИВТ': 370, 'ИТСС': 350, 'ИБ': 260},
             '03_08': {'ПМ': 1000, 'ИВТ': 1150, 'ИТСС': 1050, 'ИБ': 800},
             '04_08': {'ПМ': 1240, 'ИВТ': 1390, 'ИТСС': 1240, 'ИБ': 1190}
         }
-
-        self.pair_intersections = {
+        # Требуемое количество АБИТУРИЕНТОВ с МИНИМУМ указанными программами (п. 2.9 ТЗ)
+        self.min_intersections_2 = {
             '01_08': {'ПМ-ИВТ': 22, 'ПМ-ИТСС': 17, 'ПМ-ИБ': 20, 'ИВТ-ИТСС': 19, 'ИВТ-ИБ': 22, 'ИТСС-ИБ': 17},
             '02_08': {'ПМ-ИВТ': 190, 'ПМ-ИТСС': 190, 'ПМ-ИБ': 150, 'ИВТ-ИТСС': 190, 'ИВТ-ИБ': 140, 'ИТСС-ИБ': 120},
             '03_08': {'ПМ-ИВТ': 760, 'ПМ-ИТСС': 600, 'ПМ-ИБ': 410, 'ИВТ-ИТСС': 750, 'ИВТ-ИБ': 460, 'ИТСС-ИБ': 500},
             '04_08': {'ПМ-ИВТ': 1090, 'ПМ-ИТСС': 1110, 'ПМ-ИБ': 1070, 'ИВТ-ИТСС': 1050, 'ИВТ-ИБ': 1040, 'ИТСС-ИБ': 1090}
         }
-
-        self.triple_intersections = {
-            '01_08': {'ПМ-ИВТ-ИТСС': 5, 'ПМ-ИВТ-ИБ': 5, 'ИВТ-ИТСС-ИБ': 5, 'ПМ-ИТСС-ИБ': 5, 'ПМ-ИВТ-ИТСС-ИБ': 3},
-            '02_08': {'ПМ-ИВТ-ИТСС': 70, 'ПМ-ИВТ-ИБ': 70, 'ИВТ-ИТСС-ИБ': 70, 'ПМ-ИТСС-ИБ': 70, 'ПМ-ИВТ-ИТСС-ИБ': 50},
-            '03_08': {'ПМ-ИВТ-ИТСС': 500, 'ПМ-ИВТ-ИБ': 260, 'ИВТ-ИТСС-ИБ': 300, 'ПМ-ИТСС-ИБ': 250,
-                      'ПМ-ИВТ-ИТСС-ИБ': 200},
-            '04_08': {'ПМ-ИВТ-ИТСС': 1020, 'ПМ-ИВТ-ИБ': 1020, 'ИВТ-ИТСС-ИБ': 1000, 'ПМ-ИТСС-ИБ': 1040,
-                      'ПМ-ИВТ-ИТСС-ИБ': 1000}
+        self.min_intersections_3 = {
+            '01_08': {'ПМ-ИВТ-ИТСС': 5, 'ПМ-ИВТ-ИБ': 5, 'ИВТ-ИТСС-ИБ': 5, 'ПМ-ИТСС-ИБ': 5},
+            '02_08': {'ПМ-ИВТ-ИТСС': 70, 'ПМ-ИВТ-ИБ': 70, 'ИВТ-ИТСС-ИБ': 70, 'ПМ-ИТСС-ИБ': 70},
+            '03_08': {'ПМ-ИВТ-ИТСС': 500, 'ПМ-ИВТ-ИБ': 260, 'ИВТ-ИТСС-ИБ': 300, 'ПМ-ИТСС-ИБ': 250},
+            '04_08': {'ПМ-ИВТ-ИТСС': 1020, 'ПМ-ИВТ-ИБ': 1020, 'ИВТ-ИТСС-ИБ': 1000, 'ПМ-ИТСС-ИБ': 1040}
+        }
+        self.min_intersections_4 = {
+            '01_08': 3,
+            '02_08': 50,
+            '03_08': 200,
+            '04_08': 1000
         }
 
     def generate_csv(self, date: str, output_dir: str = ".") -> str:
-        """
-        Генерация CSV-файла с данными для указанной даты.
-        Формат: id_applic,consent,priorit,physics_it_socre,russian_score,math_score,achivments_score,total_score,program
-        """
+        """Генерация CSV-файла с данными для указанной даты"""
         os.makedirs(output_dir, exist_ok=True)
         filename = os.path.join(output_dir, f"konkurs_{date}.csv")
 
-        # Генерация абитуриентов с соблюдением пересечений
+        # Генерация абитуриентов
         applicants = self._generate_applicants(date)
 
         # Запись в CSV
@@ -405,7 +414,6 @@ class TestDataGenerator:
             writer = csv.writer(f)
             writer.writerow(['id_applic', 'consent', 'priorit', 'physics_it_socre', 'russian_score',
                              'math_score', 'achivments_score', 'total_score', 'program'])
-
             for app in applicants:
                 for prog_data in app['programs_data']:
                     writer.writerow([
@@ -419,86 +427,208 @@ class TestDataGenerator:
                         prog_data['total_score'],
                         prog_data['program']
                     ])
-
-        print(f"✓ Сгенерирован файл: {filename}")
+        total_apps = sum(len(a['programs_data']) for a in applicants)
+        print(f"✓ Сгенерирован файл: {filename} ({len(applicants)} абитуриентов, {total_apps} заявлений)")
         return filename
 
     def _generate_applicants(self, date: str) -> List[Dict]:
-        """Генерация абитуриентов с соблюдением всех требований ТЗ"""
+        """Генерация абитуриентов с точным соблюдением требований ТЗ"""
         applicants = []
         current_id = 1
 
-        # 1. Четыре программы
-        for _ in range(self.triple_intersections[date]['ПМ-ИВТ-ИТСС-ИБ']):
-            apps = self._create_applicant_with_programs(
-                current_id, date, ['ПМ', 'ИВТ', 'ИТСС', 'ИБ']
-            )
-            applicants.append(apps)
+        # 1. Рассчитываем количество абитуриентов для КАЖДОГО ТИПА пересечения ("только")
+        counts = self._calculate_exact_counts(date)
+
+        # 2. Генерация абитуриентов с 4 программами
+        for _ in range(counts['only_4']):
+            applicants.append(self._create_applicant(current_id, date, ['ПМ', 'ИВТ', 'ИТСС', 'ИБ']))
             current_id += 1
 
-        # 2. Три программы
+        # 3. Генерация абитуриентов с 3 программами
         triples = [
-            ('ПМ-ИВТ-ИТСС', ['ПМ', 'ИВТ', 'ИТСС']),
-            ('ПМ-ИВТ-ИБ', ['ПМ', 'ИВТ', 'ИБ']),
-            ('ИВТ-ИТСС-ИБ', ['ИВТ', 'ИТСС', 'ИБ']),
-            ('ПМ-ИТСС-ИБ', ['ПМ', 'ИТСС', 'ИБ'])
+            ('only_3_pm_ivt_its', ['ПМ', 'ИВТ', 'ИТСС']),
+            ('only_3_pm_ivt_ib', ['ПМ', 'ИВТ', 'ИБ']),
+            ('only_3_ivt_its_ib', ['ИВТ', 'ИТСС', 'ИБ']),
+            ('only_3_pm_its_ib', ['ПМ', 'ИТСС', 'ИБ'])
         ]
-
         for key, progs in triples:
-            count = self.triple_intersections[date].get(key, 0)
-            for _ in range(count):
-                apps = self._create_applicant_with_programs(current_id, date, progs)
-                applicants.append(apps)
+            for _ in range(counts[key]):
+                applicants.append(self._create_applicant(current_id, date, progs))
                 current_id += 1
 
-        # 3. Две программы
+        # 4. Генерация абитуриентов с 2 программами
         pairs = [
-            ('ПМ-ИВТ', ['ПМ', 'ИВТ']),
-            ('ПМ-ИТСС', ['ПМ', 'ИТСС']),
-            ('ПМ-ИБ', ['ПМ', 'ИБ']),
-            ('ИВТ-ИТСС', ['ИВТ', 'ИТСС']),
-            ('ИВТ-ИБ', ['ИВТ', 'ИБ']),
-            ('ИТСС-ИБ', ['ИТСС', 'ИБ'])
+            ('only_2_pm_ivt', ['ПМ', 'ИВТ']),
+            ('only_2_pm_its', ['ПМ', 'ИТСС']),
+            ('only_2_pm_ib', ['ПМ', 'ИБ']),
+            ('only_2_ivt_its', ['ИВТ', 'ИТСС']),
+            ('only_2_ivt_ib', ['ИВТ', 'ИБ']),
+            ('only_2_its_ib', ['ИТСС', 'ИБ'])
         ]
-
         for key, progs in pairs:
-            count = self.pair_intersections[date].get(key, 0)
-            for _ in range(count):
-                apps = self._create_applicant_with_programs(current_id, date, progs)
-                applicants.append(apps)
+            for _ in range(counts[key]):
+                applicants.append(self._create_applicant(current_id, date, progs))
                 current_id += 1
 
-        # 4. Одна программа (дополняем до нужного количества)
-        for op in ['ПМ', 'ИВТ', 'ИТСС', 'ИБ']:
-            # Подсчет уже созданных абитуриентов для программы
-            existing = sum(1 for a in applicants if any(p['program'] == op for p in a['programs_data']))
-            needed = self.total_counts[date][op] - existing
-
-            for _ in range(max(0, needed)):
-                apps = self._create_applicant_with_programs(current_id, date, [op])
-                applicants.append(apps)
+        # 5. Генерация "чистых" абитуриентов (только одна программа)
+        singles = [
+            ('only_1_pm', ['ПМ']),
+            ('only_1_ivt', ['ИВТ']),
+            ('only_1_its', ['ИТСС']),
+            ('only_1_ib', ['ИБ'])
+        ]
+        for key, progs in singles:
+            for _ in range(counts[key]):
+                applicants.append(self._create_applicant(current_id, date, progs))
                 current_id += 1
 
-        # Для 04.08 гарантируем избыток согласий над местами
+        # 6. Для 04.08 гарантируем избыток согласий над местами (п. 2.11 ТЗ)
         if date == '04_08':
-            self._ensure_agreements(applicants, date)
+            self._ensure_agreements(applicants)
+
+        # 7. Валидация
+        self._validate_applicants(applicants, date)
 
         return applicants
 
-    def _create_applicant_with_programs(self, applicant_id: int, date: str, programs: List[str]) -> Dict:
+    def _calculate_exact_counts(self, date: str) -> Dict[str, int]:
+        """
+        Рассчитывает ТОЧНОЕ количество абитуриентов для каждого типа пересечения ("только"),
+        используя принцип включений-исключений.
+        Возвращает словарь с ключами в формате 'only_X_...'.
+        """
+        min2 = self.min_intersections_2[date]
+        min3 = self.min_intersections_3[date]
+        min4 = self.min_intersections_4[date]
+        total = self.total_applications[date]
+
+        # 1. Только 4 программы
+        only_4 = min4
+
+        # 2. Только 3 программы (минимум_3 - только_4)
+        only_3_pm_ivt_its = min3['ПМ-ИВТ-ИТСС'] - only_4
+        only_3_pm_ivt_ib = min3['ПМ-ИВТ-ИБ'] - only_4
+        only_3_ivt_its_ib = min3['ИВТ-ИТСС-ИБ'] - only_4
+        only_3_pm_its_ib = min3['ПМ-ИТСС-ИБ'] - only_4
+
+        # 3. Только 2 программы (минимум_2 - минимум_3(включающие пару) + только_4)
+        only_2_pm_ivt = (
+                min2['ПМ-ИВТ']
+                - min3['ПМ-ИВТ-ИТСС']
+                - min3['ПМ-ИВТ-ИБ']
+                + only_4
+        )
+        only_2_pm_its = (
+                min2['ПМ-ИТСС']
+                - min3['ПМ-ИВТ-ИТСС']
+                - min3['ПМ-ИТСС-ИБ']
+                + only_4
+        )
+        only_2_pm_ib = (
+                min2['ПМ-ИБ']
+                - min3['ПМ-ИВТ-ИБ']
+                - min3['ПМ-ИТСС-ИБ']
+                + only_4
+        )
+        only_2_ivt_its = (
+                min2['ИВТ-ИТСС']
+                - min3['ПМ-ИВТ-ИТСС']
+                - min3['ИВТ-ИТСС-ИБ']
+                + only_4
+        )
+        only_2_ivt_ib = (
+                min2['ИВТ-ИБ']
+                - min3['ПМ-ИВТ-ИБ']
+                - min3['ИВТ-ИТСС-ИБ']
+                + only_4
+        )
+        only_2_its_ib = (
+                min2['ИТСС-ИБ']
+                - min3['ИВТ-ИТСС-ИБ']
+                - min3['ПМ-ИТСС-ИБ']
+                + only_4
+        )
+
+        # 4. Только 1 программа (формула включений-исключений)
+        only_1_pm = (
+                total['ПМ']
+                - min2['ПМ-ИВТ'] - min2['ПМ-ИТСС'] - min2['ПМ-ИБ']
+                + min3['ПМ-ИВТ-ИТСС'] + min3['ПМ-ИВТ-ИБ'] + min3['ПМ-ИТСС-ИБ']
+                - only_4
+        )
+        only_1_ivt = (
+                total['ИВТ']
+                - min2['ПМ-ИВТ'] - min2['ИВТ-ИТСС'] - min2['ИВТ-ИБ']
+                + min3['ПМ-ИВТ-ИТСС'] + min3['ПМ-ИВТ-ИБ'] + min3['ИВТ-ИТСС-ИБ']
+                - only_4
+        )
+        only_1_its = (
+                total['ИТСС']
+                - min2['ПМ-ИТСС'] - min2['ИВТ-ИТСС'] - min2['ИТСС-ИБ']
+                + min3['ПМ-ИВТ-ИТСС'] + min3['ИВТ-ИТСС-ИБ'] + min3['ПМ-ИТСС-ИБ']
+                - only_4
+        )
+        only_1_ib = (
+                total['ИБ']
+                - min2['ПМ-ИБ'] - min2['ИВТ-ИБ'] - min2['ИТСС-ИБ']
+                + min3['ПМ-ИВТ-ИБ'] + min3['ИВТ-ИТСС-ИБ'] + min3['ПМ-ИТСС-ИБ']
+                - only_4
+        )
+
+        # Валидация неотрицательности
+        counts_to_check = {
+            'only_4': only_4,
+            'only_3_pm_ivt_its': only_3_pm_ivt_its,
+            'only_3_pm_ivt_ib': only_3_pm_ivt_ib,
+            'only_3_ivt_its_ib': only_3_ivt_its_ib,
+            'only_3_pm_its_ib': only_3_pm_its_ib,
+            'only_2_pm_ivt': only_2_pm_ivt,
+            'only_2_pm_its': only_2_pm_its,
+            'only_2_pm_ib': only_2_pm_ib,
+            'only_2_ivt_its': only_2_ivt_its,
+            'only_2_ivt_ib': only_2_ivt_ib,
+            'only_2_its_ib': only_2_its_ib,
+            'only_1_pm': only_1_pm,
+            'only_1_ivt': only_1_ivt,
+            'only_1_its': only_1_its,
+            'only_1_ib': only_1_ib
+        }
+
+        for key, value in counts_to_check.items():
+            if value < 0:
+                raise ValueError(
+                    f"Отрицательное количество для '{key}': {value} на дату {date}. "
+                    f"Проверьте корректность данных ТЗ."
+                )
+
+        return counts_to_check
+
+    def _create_applicant(self, applicant_id: int, date: str, programs: List[str]) -> Dict:
         """Создание абитуриента с заявлениями на указанные программы"""
-        # Генерация баллов (реалистичные значения)
-        math_score = random.randint(65, 100)
-        russian_score = random.randint(50, 90)
-        physics_it_socre = random.randint(55, 100)
+        # Профильные баллы в зависимости от программ
+        math_base = 80
+        physics_it_base = 80
+        russian_base = 75
+
+        # Корректировка под профиль программ
+        if 'ПМ' in programs:
+            math_base += 5
+        if 'ИВТ' in programs or 'ИТСС' in programs:
+            physics_it_base += 5
+        if 'ИБ' in programs:
+            physics_it_base -= 2
+
+        math_score = random.randint(max(65, math_base - 15), 100)
+        russian_score = random.randint(55, 95)
+        physics_it_socre = random.randint(max(55, physics_it_base - 15), 100)
         achivments_score = random.choice([0, 0, 0, 2, 3, 5, 7, 10])
         total_score = math_score + russian_score + physics_it_socre + achivments_score
 
-        # Приоритеты
+        # Приоритеты (рандомизируем порядок)
         priorities = list(range(1, len(programs) + 1))
         random.shuffle(priorities)
 
-        # Согласия (зависят от даты)
+        # Вероятность согласия
         consent_chance = {
             '01_08': 0.3,
             '02_08': 0.6,
@@ -506,14 +636,14 @@ class TestDataGenerator:
             '04_08': 0.95
         }
 
+        # Для 04.08 высокобалльные абитуриенты почти всегда дают согласие
+        consent_base = consent_chance[date]
+        if date == '04_08' and total_score > 240:
+            consent_base = 0.99
+
         programs_data = []
         for i, op in enumerate(programs):
-            # Для 04.08 высокобалльные абитуриенты точно дают согласие
-            if date == '04_08' and total_score > 240:
-                consent = 1
-            else:
-                consent = 1 if random.random() < consent_chance[date] else 0
-
+            consent = 1 if random.random() < consent_base else 0
             programs_data.append({
                 'program': op,
                 'priorit': priorities[i],
@@ -530,38 +660,128 @@ class TestDataGenerator:
             'programs_data': programs_data
         }
 
-    def _ensure_agreements(self, applicants: List[Dict], date: str):
-        """Гарантируем избыток согласий над местами для 04.08"""
-        if date != '04_08':
-            return
-
+    def _ensure_agreements(self, applicants: List[Dict]):
+        """Гарантируем избыток согласий над местами для 04.08 (п. 2.11 ТЗ)"""
         places = {'ПМ': 40, 'ИВТ': 50, 'ИТСС': 30, 'ИБ': 20}
         agreements = {op: 0 for op in places.keys()}
 
-        # Подсчет текущих согласий
+        # Подсчёт текущих согласий
         for app in applicants:
             for prog in app['programs_data']:
                 if prog['consent'] == 1:
                     agreements[prog['program']] += 1
 
-        # Добавление недостающих согласий
+        # Добавление недостающих согласий (гарантируем +15% от мест)
         for op in places.keys():
-            needed = places[op] + 5  # На 5 больше мест
-            if agreements[op] < needed:
-                # Находим абитуриентов с этой программой и высокими баллами
+            required = int(places[op] * 1.15)
+            if agreements[op] < required:
+                # Находим абитуриентов с этой программой без согласия
                 candidates = []
                 for app in applicants:
                     for prog in app['programs_data']:
                         if prog['program'] == op and prog['consent'] == 0:
                             candidates.append((app, prog))
 
+                # Сортируем по баллам
                 candidates.sort(key=lambda x: x[1]['total_score'], reverse=True)
 
-                for i in range(min(needed - agreements[op], len(candidates))):
+                # Добавляем согласия
+                for i in range(min(required - agreements[op], len(candidates))):
                     candidates[i][1]['consent'] = 1
                     agreements[op] += 1
 
+    def _validate_applicants(self, applicants: List[Dict], date: str):
+        """Валидация соответствия сгенерированных данных требованиям ТЗ"""
+        # Подсчёт заявлений по программам
+        app_counts = {'ПМ': 0, 'ИВТ': 0, 'ИТСС': 0, 'ИБ': 0}
+        for app in applicants:
+            for prog in app['programs_data']:
+                app_counts[prog['program']] += 1
 
+        # Проверка общего количества заявлений
+        expected = self.total_applications[date]
+        for op in app_counts.keys():
+            if app_counts[op] != expected[op]:
+                raise ValueError(
+                    f"Несоответствие количества заявлений для {op} на {date}: "
+                    f"ожидалось {expected[op]}, получено {app_counts[op]}"
+                )
+
+        # Подсчёт пересечений абитуриентов (с фиксированным порядком программ как в ТЗ)
+        intersections_2 = defaultdict(int)
+        intersections_3 = defaultdict(int)
+        intersections_4 = 0
+
+        for app in applicants:
+            progs = [p['program'] for p in app['programs_data']]
+            prog_count = len(progs)
+
+            if prog_count == 4:
+                intersections_4 += 1
+            elif prog_count == 3:
+                # Формируем ключ в порядке ТЗ: ПМ > ИВТ > ИТСС > ИБ
+                ordered = []
+                if 'ПМ' in progs: ordered.append('ПМ')
+                if 'ИВТ' in progs: ordered.append('ИВТ')
+                if 'ИТСС' in progs: ordered.append('ИТСС')
+                if 'ИБ' in progs: ordered.append('ИБ')
+                key = f"{ordered[0]}-{ordered[1]}-{ordered[2]}"
+                intersections_3[key] += 1
+            elif prog_count == 2:
+                # Формируем ключ в порядке ТЗ
+                ordered = []
+                if 'ПМ' in progs: ordered.append('ПМ')
+                if 'ИВТ' in progs: ordered.append('ИВТ')
+                if 'ИТСС' in progs: ordered.append('ИТСС')
+                if 'ИБ' in progs: ordered.append('ИБ')
+                key = f"{ordered[0]}-{ordered[1]}"
+                intersections_2[key] += 1
+
+        # Проверка пересечения 4 программ
+        if intersections_4 != self.min_intersections_4[date]:
+            raise ValueError(
+                f"Пересечение 4 программ на {date}: "
+                f"ожидалось {self.min_intersections_4[date]}, получено {intersections_4}"
+            )
+
+        # Проверка пересечений 3 программ (минимум = только_3 + только_4)
+        for triple_key, expected in self.min_intersections_3[date].items():
+            actual = intersections_3.get(triple_key, 0) + intersections_4
+            if actual != expected:
+                raise ValueError(
+                    f"Пересечение {triple_key} на {date}: "
+                    f"ожидалось {expected}, получено {actual} "
+                    f"(только_3={intersections_3.get(triple_key, 0)}, только_4={intersections_4})"
+                )
+
+        # Проверка пересечений 2 программ (минимум = только_2 + только_3(включающие пару) + только_4)
+        for pair_key, expected in self.min_intersections_2[date].items():
+            actual = intersections_2.get(pair_key, 0)
+
+            # Добавляем пересечения 3 программ, включающие эту пару
+            if pair_key == 'ПМ-ИВТ':
+                actual += intersections_3.get('ПМ-ИВТ-ИТСС', 0) + intersections_3.get('ПМ-ИВТ-ИБ', 0)
+            elif pair_key == 'ПМ-ИТСС':
+                actual += intersections_3.get('ПМ-ИВТ-ИТСС', 0) + intersections_3.get('ПМ-ИТСС-ИБ', 0)
+            elif pair_key == 'ПМ-ИБ':
+                actual += intersections_3.get('ПМ-ИВТ-ИБ', 0) + intersections_3.get('ПМ-ИТСС-ИБ', 0)
+            elif pair_key == 'ИВТ-ИТСС':
+                actual += intersections_3.get('ПМ-ИВТ-ИТСС', 0) + intersections_3.get('ИВТ-ИТСС-ИБ', 0)
+            elif pair_key == 'ИВТ-ИБ':
+                actual += intersections_3.get('ПМ-ИВТ-ИБ', 0) + intersections_3.get('ИВТ-ИТСС-ИБ', 0)
+            elif pair_key == 'ИТСС-ИБ':
+                actual += intersections_3.get('ИВТ-ИТСС-ИБ', 0) + intersections_3.get('ПМ-ИТСС-ИБ', 0)
+
+            # Добавляем пересечение 4 программ
+            actual += intersections_4
+
+            if actual != expected:
+                raise ValueError(
+                    f"Пересечение {pair_key} на {date}: "
+                    f"ожидалось {expected}, получено {actual}"
+                )
+
+        print(f"✓ Валидация данных для {date} пройдена успешно")
 class AdmissionCalculator:
     """Расчет проходных баллов с корректным учетом приоритетов"""
 
@@ -696,7 +916,15 @@ class ReportGenerator:
         # Создание PDF
         doc = SimpleDocTemplate(filename, pagesize=A4, rightMargin=30, leftMargin=30, topMargin=30, bottomMargin=30)
         styles = getSampleStyleSheet()
-        styles.add(ParagraphStyle(name='Center', alignment=1, fontSize=12))
+        for style in styles.byName.values():
+            style.fontName = 'DejaVuSans'  # Применяем шрифт ко всем стилям
+
+        styles.add(ParagraphStyle(
+            name='Center',
+            alignment=1,
+            fontSize=12,
+            fontName='DejaVuSans'
+        ))
         story = []
 
         # Заголовок
@@ -731,11 +959,12 @@ class ReportGenerator:
 
         score_table = Table(score_data, colWidths=[150, 100, 100, 120])
         score_table.setStyle(TableStyle([
+            ('FONTNAME', (0, 0), (-1, 0), 'DejaVuSans-Bold'),  # Заголовки — жирный
+            ('FONTNAME', (0, 1), (-1, -1), 'DejaVuSans'),
             ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
             ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
             ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
-            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-            ('FONTSIZE', (0, 0), (-1, 0), 12),
+            ('FONTSIZE', (0, 0), (-1, 0), 8),
             ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
             ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
             ('GRID', (0, 0), (-1, -1), 1, colors.black),
@@ -772,11 +1001,12 @@ class ReportGenerator:
 
                 enrolled_table = Table(enrolled_data, colWidths=[80, 80, 70, 50, 50, 50, 40])
                 enrolled_table.setStyle(TableStyle([
+                    ('FONTNAME', (0, 0), (-1, 0), 'DejaVuSans-Bold'),  # Заголовки — жирный
+                    ('FONTNAME', (0, 1), (-1, -1), 'DejaVuSans'),
                     ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
                     ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
                     ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
-                    ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-                    ('FONTSIZE', (0, 0), (-1, 0), 10),
+                    ('FONTSIZE', (0, 0), (-1, 0), 8),
                     ('GRID', (0, 0), (-1, -1), 1, colors.black),
                     ('FONTSIZE', (0, 1), (-1, -1), 8),
                 ]))
@@ -845,13 +1075,13 @@ class ReportGenerator:
 
         stat_table = Table(stat_data, colWidths=[200, 80, 80, 80, 80])
         stat_table.setStyle(TableStyle([
+            ('FONTNAME', (0, 0), (-1, 0), 'DejaVuSans-Bold'),  # Заголовки — жирный
+            ('FONTNAME', (0, 1), (-1, -1), 'DejaVuSans'),
             ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
             ('BACKGROUND', (0, 0), (0, -1), colors.grey),
             ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
             ('TEXTCOLOR', (0, 0), (0, -1), colors.whitesmoke),
             ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
-            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
-            ('FONTNAME', (0, 0), (0, -1), 'Helvetica-Bold'),
             ('FONTSIZE', (0, 0), (-1, -1), 9),
             ('GRID', (0, 0), (-1, -1), 1, colors.black),
             ('VALIGN', (0, 0), (-1, -1), 'MIDDLE')
