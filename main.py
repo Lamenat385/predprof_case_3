@@ -1,7 +1,5 @@
 import sqlite3
 import os
-import csv
-import random
 from datetime import datetime
 from collections import defaultdict
 from reportlab.lib import colors
